@@ -14,23 +14,29 @@ pub struct EpochTime {
 }
 
 impl EpochTime {
-    pub fn run(self, verbosity: i32) {
+    pub fn run(self, verbosity: i32) -> i32 {
         if verbosity > 0 {
             println!("Creating epoch time value from {:?}", self.input);
         }
 
-        // TODO: Error checking
-        let input_numeric: i64 = self.input.parse::<i64>().unwrap();
+        let parsed = self.input.parse::<i64>();
+        if parsed.is_err() {
+            println!("Error parsing {:?}; expected a numeric value.", self.input);
+            return 1;
+        }
 
-        let converted = DateTime::<Utc>::from_utc(
-            NaiveDateTime::from_timestamp(input_numeric, 0), Utc);
+        let parsed = parsed.unwrap(); // Not sure I like reusing the variable, but it's proper rust
 
-        let result = format!("Epoch time is {:?}, UTC time is {:?}", input_numeric, converted);
+        let converted = DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(parsed, 0), Utc);
+
+        let result = format!("Epoch time is {:?}, UTC time is {:?}", parsed, converted);
         println!("{:?}", result);
 
         if self.clipboard {
             paste(result.to_owned());
             println!("Copied results to clipboard successfully.");
         }
+
+        0
     }
 }

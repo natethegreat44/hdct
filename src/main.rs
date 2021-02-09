@@ -8,10 +8,12 @@ mod commands;
 fn main() {
     let opts: Opts = Opts::parse();
 
-    run(opts);
+    let result = run(opts);
+
+    std::process::exit(result);
 }
 
-fn run(opts: Opts) {
+fn run(opts: Opts) -> i32 {
     // Gets a value for config if supplied by user, or defaults to "default.conf"
     // println!("Value for config: {}", opts.config);
     // println!("Using input file: {}", opts.input);
@@ -27,19 +29,14 @@ fn run(opts: Opts) {
 
     // You can handle information about subcommands by requesting their matches by name
     // (as below), requesting just the name used, or both at the same time
-    match opts.subcmd {
-        SubCommand::Test(t) => {
-            if t.debug {
-                println!("Printing debug info...");
-            } else {
-                println!("Printing normally...");
-            }
-        },
+    let result = match opts.subcmd {
         SubCommand::Uuid(u) => {
-            u.run(opts.verbose);
+            u.run(opts.verbose)
         },
         SubCommand::EpochTime(e) => {
-            e.run(opts.verbose);
+            e.run(opts.verbose)
         }
-    }
+    };
+
+    result
 }

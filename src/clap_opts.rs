@@ -1,5 +1,4 @@
 use clap::Clap;
-use crate::commands::test_command::Test;
 use crate::commands::uuid_command::Uuid;
 use crate::commands::epochtime_command::EpochTime;
 
@@ -18,8 +17,6 @@ pub struct Opts {
 
 #[derive(Clap)]
 pub enum SubCommand {
-    #[clap(version = "1.0", author = "Nathan Blair <nathan.blair@gmail.com>")]
-    Test(Test),
     Uuid(Uuid),
     EpochTime(EpochTime),
 }

@@ -19,7 +19,7 @@ pub struct Uuid {
 }
 
 impl Uuid {
-    pub fn run(self, verbosity: i32) {
+    pub fn run(self, verbosity: i32) -> i32 {
         if verbosity > 0 {
             println!("Creating uuid with format {:?} and clipboard {:?}", self.hyphens, self.clipboard);
         }
@@ -40,5 +40,7 @@ impl Uuid {
             paste(result.to_owned());
             println!("Copied guid {:?} to clipboard successfully.", result);
         }
+
+        0
     }
 }
