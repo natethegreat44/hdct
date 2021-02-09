@@ -20,4 +20,3 @@ pub enum SubCommand {
     Uuid(Uuid),
     EpochTime(EpochTime),
 }
-
