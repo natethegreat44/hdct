@@ -1,6 +1,7 @@
 use clap::Clap;
 use uuid::Uuid as UuidGen;
 use crate::commands::clipboard_helper::paste;
+use crate::commands::HdctCommand;
 
 /// Create a UUID
 #[derive(Clap)]
@@ -18,8 +19,8 @@ pub struct Uuid {
     pub upper: bool,
 }
 
-impl Uuid {
-    pub fn run(self, verbosity: i32) -> i32 {
+impl HdctCommand for Uuid {
+    fn run(self, verbosity: i32) -> i32 {
         if verbosity > 0 {
             println!("Creating uuid with format {:?} and clipboard {:?}", self.hyphens, self.clipboard);
         }

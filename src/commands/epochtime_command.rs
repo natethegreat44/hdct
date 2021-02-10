@@ -1,6 +1,7 @@
 use clap::Clap;
 use chrono::{NaiveDateTime, DateTime, Utc};
 use crate::commands::clipboard_helper::paste;
+use crate::commands::HdctCommand;
 
 /// Convert from epoch time to human readable time. UTC only.
 #[derive(Clap)]
@@ -13,8 +14,8 @@ pub struct EpochTime {
     input: String,
 }
 
-impl EpochTime {
-    pub fn run(self, verbosity: i32) -> i32 {
+impl HdctCommand for EpochTime {
+    fn run(self, verbosity: i32) -> i32 {
         if verbosity > 0 {
             println!("Creating epoch time value from {:?}", self.input);
         }

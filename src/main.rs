@@ -1,6 +1,7 @@
 use clap::Clap;
 use crate::clap_opts::Opts;
 use crate::clap_opts::SubCommand;
+use crate::commands::HdctCommand;
 
 mod clap_opts;
 mod commands;
