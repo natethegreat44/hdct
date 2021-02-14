@@ -1,6 +1,7 @@
 use clap::Clap;
 use chrono::{NaiveDateTime, DateTime, Utc};
 use crate::commands::{HdctCommand, CommandResult};
+use std::fmt::Write;
 
 /// Convert from epoch time to human readable time. UTC only.
 #[derive(Clap)]
@@ -24,13 +25,9 @@ impl HdctCommand for EpochTime {
 
         let converted = DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(parsed, 0), Utc);
 
-        let result = format!("Epoch time is {:?}, UTC time is {:?}", parsed, converted);
-
-        //
-        // if self.clipboard {
-        //     paste(result);
-        //     println!("Copied results to clipboard successfully.");
-        // }
+        let mut result = String::new();
+        writeln!(&mut result, "Epoch time: {}", parsed).unwrap();
+        writeln!(&mut result, "UTC time: {}", converted).unwrap();
 
         Ok(result)
     }

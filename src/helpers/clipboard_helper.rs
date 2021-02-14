@@ -1,5 +1,4 @@
-use clipboard::ClipboardContext;
-use clipboard::ClipboardProvider;
+use clipboard::{ClipboardContext, ClipboardProvider};
 
 pub fn paste(data: String) {
     let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();

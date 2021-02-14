@@ -1,6 +1,5 @@
 use clap::Clap;
-use crate::clap_opts::Opts;
-use crate::clap_opts::SubCommand;
+use crate::clap_opts::{Opts, SubCommand};
 use crate::commands::{HdctCommand, CommandResult};
 use crate::helpers::clipboard_helper::paste;
 
