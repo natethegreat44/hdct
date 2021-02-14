@@ -10,6 +10,10 @@ pub struct Opts {
     #[clap(short, long, parse(from_occurrences))]
     pub verbose: i32,
 
+    /// Place the result of the command on the clipboard
+    #[clap(short)]
+    pub clipboard: bool,
+
     /// The required subcommand
     #[clap(subcommand)]
     pub subcmd: SubCommand,

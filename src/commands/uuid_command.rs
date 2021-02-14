@@ -1,15 +1,10 @@
 use clap::Clap;
 use uuid::Uuid as UuidGen;
-use crate::commands::clipboard_helper::paste;
-use crate::commands::HdctCommand;
+use crate::commands::{HdctCommand, CommandResult};
 
 /// Create a UUID
 #[derive(Clap)]
 pub struct Uuid {
-    /// Place the resulting UUID on the clipboard
-    #[clap(short)]
-    pub clipboard: bool,
-
     /// Format of the resulting uuids - with or without hyphens
     #[clap(short)]
     pub hyphens: bool,
@@ -20,9 +15,9 @@ pub struct Uuid {
 }
 
 impl HdctCommand for Uuid {
-    fn run(self, verbosity: i32) -> i32 {
+    fn run(self, verbosity: i32) -> CommandResult {
         if verbosity > 0 {
-            println!("Creating uuid with format {:?} and clipboard {:?}", self.hyphens, self.clipboard);
+            println!("Creating UUID");
         }
 
         let my_uuid = match self.hyphens {
@@ -35,13 +30,6 @@ impl HdctCommand for Uuid {
             _ => my_uuid
         };
 
-        println!("{}", result);
-
-        if self.clipboard {
-            paste(result.to_owned());
-            println!("Copied guid {:?} to clipboard successfully.", result);
-        }
-
-        0
+        Ok(result)
     }
 }
