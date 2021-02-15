@@ -1,5 +1,5 @@
-pub mod uuid_command;
 pub mod epochtime_command;
+pub mod uuid_command;
 
 pub type CommandResult = Result<String, String>;
 

@@ -1,6 +1,6 @@
+use crate::commands::{CommandResult, HdctCommand};
 use clap::Clap;
 use uuid::Uuid as UuidGen;
-use crate::commands::{HdctCommand, CommandResult};
 
 /// Create a UUID
 #[derive(Clap)]
@@ -27,7 +27,7 @@ impl HdctCommand for Uuid {
 
         let result = match self.upper {
             true => my_uuid.to_uppercase(),
-            _ => my_uuid
+            _ => my_uuid,
         };
 
         Ok(result)

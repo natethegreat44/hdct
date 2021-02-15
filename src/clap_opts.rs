@@ -1,6 +1,6 @@
-use clap::Clap;
-use crate::commands::uuid_command::Uuid;
 use crate::commands::epochtime_command::EpochTime;
+use crate::commands::uuid_command::Uuid;
+use clap::Clap;
 
 /// A suite (in progress!) of handy developer command line tools.
 #[derive(Clap)]

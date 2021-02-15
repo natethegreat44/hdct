@@ -1,7 +1,7 @@
-use clap::Clap;
 use crate::clap_opts::{Opts, SubCommand};
-use crate::commands::{HdctCommand, CommandResult};
+use crate::commands::{CommandResult, HdctCommand};
 use crate::helpers::clipboard_helper::paste;
+use clap::Clap;
 
 mod clap_opts;
 mod commands;
@@ -15,7 +15,7 @@ fn main() {
             println!("Success!");
             println!("{}", t);
             std::process::exit(0)
-        },
+        }
         Err(e) => {
             println!("Encountered an error: {}", e);
             std::process::exit(-1)
@@ -28,16 +28,12 @@ fn run(opts: Opts) -> CommandResult {
     // (i.e. 'myprog -v -v -v' or 'myprog -vvv' vs 'myprog -v'
     match opts.verbose {
         0 => (),
-        x => println!("Verbosity level {}", x)
+        x => println!("Verbosity level {}", x),
     }
 
     let result = match opts.subcmd {
-        SubCommand::Uuid(u) => {
-            u.run(opts.verbose)
-        },
-        SubCommand::EpochTime(e) => {
-            e.run(opts.verbose)
-        }
+        SubCommand::Uuid(u) => u.run(opts.verbose),
+        SubCommand::EpochTime(e) => e.run(opts.verbose),
     };
 
     match &result {
@@ -47,7 +43,7 @@ fn run(opts: Opts) -> CommandResult {
                 paste(t.to_owned());
             }
         }
-        _ => ()
+        _ => (),
     }
 
     result

@@ -1,13 +1,13 @@
+use crate::commands::{CommandResult, HdctCommand};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use clap::Clap;
-use chrono::{NaiveDateTime, DateTime, Utc};
-use crate::commands::{HdctCommand, CommandResult};
 use std::fmt::Write;
 
 /// Convert from epoch time to human readable time. UTC only.
 #[derive(Clap)]
 pub struct EpochTime {
     /// The input value to convert.
-    input: String,
+    input: i64,
 }
 
 impl HdctCommand for EpochTime {
@@ -16,18 +16,24 @@ impl HdctCommand for EpochTime {
             println!("Creating epoch time value from {:?}", self.input);
         }
 
-        let parsed = self.input.parse::<i64>();
-        if parsed.is_err() {
-            return Err(format!("Error parsing {:?}; expected a numeric value.", self.input));
-        }
+        let converted =
+            DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(self.input, 0), Utc);
 
-        let parsed = parsed.unwrap(); // Not sure I like reusing the variable, but it's proper rust
-
-        let converted = DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(parsed, 0), Utc);
+        let diff = converted.signed_duration_since(Utc::now());
 
         let mut result = String::new();
-        writeln!(&mut result, "Epoch time: {}", parsed).unwrap();
+        writeln!(&mut result, "Epoch time: {}", self.input).unwrap();
         writeln!(&mut result, "UTC time: {}", converted).unwrap();
+        writeln!(
+            &mut result,
+            "Relative to now: {:?}d {:02}h {:02}m {:02}.{:04}s",
+            diff.num_days(),
+            diff.num_hours(),
+            diff.num_minutes(),
+            diff.num_seconds(),
+            diff.num_milliseconds()
+        )
+        .unwrap();
 
         Ok(result)
     }
