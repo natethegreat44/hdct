@@ -1,5 +1,5 @@
 use clap::Parser;
-use hdct_helpers::paste;
+use hdct_helpers::clipboard_helper::paste;
 use uuid::Uuid;
 
 /// Create a UUID
