@@ -1,6 +1,6 @@
 use clap::Parser;
+use hdct_helpers::paste;
 use uuid::Uuid;
-use clipboard::{ClipboardContext, ClipboardProvider};
 
 /// Create a UUID
 #[derive(Parser, Debug)]
@@ -17,11 +17,6 @@ struct Args {
     /// Copy the resulting uuid to the clipboard
     #[clap(short)]
     pub copy_to_clipboard: bool,
-}
-
-fn paste(data: &str) {
-    let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
-    ctx.set_contents(data.to_owned()).unwrap();
 }
 
 fn main() {
