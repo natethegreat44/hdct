@@ -29,11 +29,14 @@ fn print_header(width: u32, margin_width: usize) {
         print!("{: ^margin_width$}", "");
         let p10 = 10u32.pow(i - 1);
         for j in 0..width + 1 {
-            if j % p10 == 0 {
-                print!("{}", (j / p10) % 10);
-            } else {
-                print!(" ");
-            }
+            print!(
+                "{}",
+                if j % p10 == 0 {
+                    format!("{}", (j / p10) % 10)
+                } else {
+                    " ".to_string()
+                }
+            );
         }
         println!();
     }
@@ -48,8 +51,7 @@ fn buffer_lines(count: usize, iterator: &mut Lines<Box<dyn BufRead>>) -> Vec<Str
     for _ in 0..count {
         match iterator.next() {
             Some(Ok(line)) => lines.push(line),
-            None => break,
-            _ => {}
+            _ => break,
         }
     }
 
@@ -68,7 +70,11 @@ fn main() {
     let mut iterator = reader.lines();
 
     let initial_lines = buffer_lines(args.lines_to_read, &mut iterator);
-    let max_len = initial_lines.iter().map(|x| x.chars().count()).max().unwrap_or(0);
+    let max_len = initial_lines
+        .iter()
+        .map(|x| x.chars().count())
+        .max()
+        .unwrap_or(0);
 
     if !args.no_header {
         print_header(max_len as u32, args.margin);
