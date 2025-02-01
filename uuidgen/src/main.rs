@@ -7,15 +7,15 @@ use uuid::Uuid;
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Include hyphens in the uuid. False by default.
-    #[clap(default_value_t=false,short,long)]
+    #[clap(default_value_t = false, short, long)]
     pub with_hyphens: bool,
 
     /// Convert the uuid to upper case
-    #[clap(short,long)]
+    #[clap(short, long)]
     pub upper: bool,
 
     /// Copy the resulting uuid to the clipboard
-    #[clap(short,long)]
+    #[clap(short, long)]
     pub copy_to_clipboard: bool,
 }
 
@@ -24,7 +24,7 @@ fn main() {
 
     let uuid = match args.with_hyphens {
         true => Uuid::new_v4().to_string(),
-        _ => Uuid::new_v4().simple().to_string()
+        _ => Uuid::new_v4().simple().to_string(),
     };
 
     let result = match args.upper {
@@ -34,8 +34,8 @@ fn main() {
 
     match args.copy_to_clipboard {
         true => paste(&result),
-        _ => ()
-    }    
+        _ => (),
+    }
 
     println!("{result}");
 }

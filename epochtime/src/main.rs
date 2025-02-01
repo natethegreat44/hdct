@@ -11,7 +11,7 @@ pub struct Args {
     input: i64,
 
     /// Copy the resulting uuid to the clipboard
-    #[clap(short,long)]
+    #[clap(short, long)]
     pub copy_to_clipboard: bool,
 }
 
@@ -20,14 +20,19 @@ fn main() {
 
     let utc_now = Utc::now();
 
-    let dt: DateTime<Utc> = DateTime::<Utc>::from_timestamp(args.input, 0).expect("invalid timestamp");
+    let dt: DateTime<Utc> =
+        DateTime::<Utc>::from_timestamp(args.input, 0).expect("invalid timestamp");
     let diff = dt.signed_duration_since(utc_now);
 
     let mut result = String::new();
     writeln!(&mut result, "Epoch time: {}", args.input).unwrap();
     writeln!(&mut result, "UTC time: {}", dt).unwrap();
 
-    let sign = if utc_now.timestamp_millis() - dt.timestamp_millis() > 0 { "-" } else { "" };
+    let sign = if utc_now.timestamp_millis() - dt.timestamp_millis() > 0 {
+        "-"
+    } else {
+        ""
+    };
 
     writeln!(
         &mut result,
@@ -42,8 +47,8 @@ fn main() {
 
     match args.copy_to_clipboard {
         true => paste(&result),
-        _ => ()
-    } 
+        _ => (),
+    }
 
     println!("{}", result);
 }
