@@ -1,5 +1,4 @@
 use clap::Parser;
-use std::cmp::max;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, Lines};
 
@@ -10,7 +9,7 @@ struct Args {
     #[clap(default_value_t = 5, short, long)]
     pub margin: usize,
 
-    /// Number of lines to read to infer header size
+    /// Maximum number of lines to read to infer header size
     #[clap(default_value_t = 10, short, long)]
     pub lines_to_read: usize,
 
@@ -57,14 +56,6 @@ fn buffer_lines(count: usize, iterator: &mut Lines<Box<dyn BufRead>>) -> Vec<Str
     lines
 }
 
-fn get_longest_line_size(lines: &Vec<String>) -> usize {
-    let mut max_len = 0;
-    for line in lines {
-        max_len = max(max_len, line.chars().count());
-    }
-    max_len
-}
-
 fn main() {
     let args = Args::parse();
 
@@ -77,7 +68,7 @@ fn main() {
     let mut iterator = reader.lines();
 
     let initial_lines = buffer_lines(args.lines_to_read, &mut iterator);
-    let max_len = get_longest_line_size(&initial_lines);
+    let max_len = initial_lines.iter().map(|x| x.chars().count()).max().unwrap_or(0);
 
     if !args.no_header {
         print_header(max_len as u32, args.margin);
