@@ -6,6 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = "0.4.31"
-clap = { version = "4.4.13", features = ["derive"] }
+chrono = "0.4.39"
+clap = { version = "4.5.27", features = ["derive"] }
 hdct_helpers = { path = "../hdct_helpers" }

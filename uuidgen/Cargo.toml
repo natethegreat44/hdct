@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-clap = { version = "4.4.13", features = ["derive"] }
-uuid = { version = "1.6.1", features = ["v4"] }
+clap = { version = "4.5.27", features = ["derive"] }
+uuid = { version = "1.12.1", features = ["v4"] }
 hdct_helpers = { path = "../hdct_helpers" }
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
