@@ -61,8 +61,7 @@ fn buffer_lines(count: usize, iterator: &mut Lines<Box<dyn BufRead>>) -> Vec<Str
 fn main() {
     let args = Args::parse();
 
-    let input = args.file_name;
-    let reader: Box<dyn BufRead> = match input {
+    let reader: Box<dyn BufRead> = match args.file_name {
         None => Box::new(BufReader::new(io::stdin())),
         Some(filename) => Box::new(BufReader::new(File::open(filename).unwrap())),
     };

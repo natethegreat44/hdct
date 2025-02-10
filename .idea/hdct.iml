@@ -7,6 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/hdct_helpers/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/uuidgen/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/nu/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/fw2delim/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
