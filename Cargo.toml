@@ -2,7 +2,9 @@
 resolver = "2"
 
 members = [
-    "epochtime", "fw2delim",
-    "hdct_helpers", "nu",
+    "epochtime",
+    "fw2delim",
+    "hdct_helpers",
+    "nu",
     "uuidgen",
 ]
