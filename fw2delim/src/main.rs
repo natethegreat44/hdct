@@ -36,7 +36,7 @@ impl ColumnSpec {
         ColumnSpec {
             name: parts.next().unwrap().to_string(),
             data_type: parts.next().unwrap().to_string(),
-            width: parts.next().unwrap().parse::<usize>().unwrap(),
+            width: parts.next().unwrap().parse::<usize>().unwrap(), //TODO: handle the '*' case, which means open-ended
         }
     }
 
