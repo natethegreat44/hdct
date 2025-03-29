@@ -17,7 +17,7 @@ struct Args {
     #[clap(default_value_t = false, short, long)]
     pub no_header: bool,
 
-    /// File to read. If not specified, will expect stdin.Don't show the numeric column-count header
+    /// File to read. If not specified, will expect stdin.
     #[clap(short, long)]
     pub file_name: Option<String>,
 }
