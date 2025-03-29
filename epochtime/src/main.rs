@@ -3,7 +3,7 @@ use clap::Parser;
 use hdct_helpers::clipboard_helper::paste;
 use std::fmt::Write;
 
-/// Convert from epoch time to human readable time. UTC only.
+/// Convert from epoch time to human-readable time. UTC only.
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct Args {
@@ -20,8 +20,7 @@ fn main() {
 
     let utc_now = Utc::now();
 
-    let dt: DateTime<Utc> =
-        DateTime::<Utc>::from_timestamp(args.input, 0).expect("invalid timestamp");
+    let dt = DateTime::<Utc>::from_timestamp(args.input, 0).expect("invalid timestamp");
     let diff = dt.signed_duration_since(utc_now);
 
     let mut result = String::new();

@@ -1,19 +1,21 @@
 use crate::column_spec::ColumnSpec;
 use crate::row_writer::RowWriter;
 
-pub struct DelimitedOutput {
-    pub delimiter: String,
+pub struct DelimitedOutput<'a> {
+    delimiter: String,
+    specs: &'a Vec<ColumnSpec>,
 }
 
-impl DelimitedOutput {
-    pub fn new(delimiter: String) -> Self {
-        Self { delimiter }
+impl<'a> DelimitedOutput<'a> {
+    pub fn new(delimiter: String, specs: &'a Vec<ColumnSpec>) -> Self {
+        Self { delimiter, specs }
     }
 }
 
-impl RowWriter for DelimitedOutput {
-    fn write_header(&self, spec: &Vec<ColumnSpec>) {
-        let header_line = spec
+impl RowWriter for DelimitedOutput<'_> {
+    fn write_header(&self) {
+        let header_line = self
+            .specs
             .iter()
             .map(|col| col.name.to_string())
             .collect::<Vec<String>>()

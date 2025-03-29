@@ -6,6 +6,7 @@ use std::io::BufRead;
 mod column_spec;
 mod delimited_output;
 mod row_writer;
+mod parquet_output;
 
 use column_spec::ColumnSpec;
 use delimited_output::DelimitedOutput;
@@ -43,7 +44,7 @@ struct Args {
 
     /// File to read. If not specified, will expect stdin.
     #[clap(short, long)]
-    pub file_name: Option<String>,
+    pub input_file_name: Option<String>,
 
     /// Print headers
     #[clap(default_value_t = true, short, long)]
@@ -54,20 +55,14 @@ struct Args {
 fn main() {
     let args = Args::parse();
     let delimiter = args.delimiter.as_str();
-
     let spec = ColumnSpec::parse(args.spec.as_str());
+    let output = DelimitedOutput::new(delimiter.to_string(), &spec);
 
-    let output = DelimitedOutput::new(delimiter.to_string());
     if args.with_headers {
-        output.write_header(&spec);
+        output.write_header();
     }
 
-    // let reader: Box<dyn BufRead> = match args.file_name {
-    //     None => Box::new(BufReader::new(io::stdin())),
-    //     Some(filename) => Box::new(BufReader::new(File::open(filename).unwrap())),
-    // };
-
-    let reader = reader_from_file_or_stdin(args.file_name);
+    let reader = reader_from_file_or_stdin(args.input_file_name);
 
     let iterator = reader.lines();
 
