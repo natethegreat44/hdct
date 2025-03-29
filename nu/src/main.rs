@@ -1,6 +1,6 @@
 use clap::Parser;
-use std::fs::File;
-use std::io::{self, BufRead, BufReader, Lines};
+use hdct_helpers::io_helper::reader_from_file_or_stdin;
+use std::io::{BufRead, Lines};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -61,10 +61,7 @@ fn buffer_lines(count: usize, iterator: &mut Lines<Box<dyn BufRead>>) -> Vec<Str
 fn main() {
     let args = Args::parse();
 
-    let reader: Box<dyn BufRead> = match args.file_name {
-        None => Box::new(BufReader::new(io::stdin())),
-        Some(filename) => Box::new(BufReader::new(File::open(filename).unwrap())),
-    };
+    let reader = reader_from_file_or_stdin(args.file_name);
 
     let mut iterator = reader.lines();
 

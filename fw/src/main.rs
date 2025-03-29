@@ -1,15 +1,15 @@
 use clap::Parser;
+use hdct_helpers::io_helper::reader_from_file_or_stdin;
 use std::cmp::min;
-use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::io::BufRead;
 
 mod column_spec;
 mod delimited_output;
 mod row_writer;
 
+use column_spec::ColumnSpec;
 use delimited_output::DelimitedOutput;
 use row_writer::RowWriter;
-use column_spec::ColumnSpec;
 
 fn parse_line(line: &String, spec: &Vec<ColumnSpec>) -> Vec<String> {
     let mut result = Vec::<String>::new();
@@ -62,10 +62,12 @@ fn main() {
         output.write_header(&spec);
     }
 
-    let reader: Box<dyn BufRead> = match args.file_name {
-        None => Box::new(BufReader::new(io::stdin())),
-        Some(filename) => Box::new(BufReader::new(File::open(filename).unwrap())),
-    };
+    // let reader: Box<dyn BufRead> = match args.file_name {
+    //     None => Box::new(BufReader::new(io::stdin())),
+    //     Some(filename) => Box::new(BufReader::new(File::open(filename).unwrap())),
+    // };
+
+    let reader = reader_from_file_or_stdin(args.file_name);
 
     let iterator = reader.lines();
 
