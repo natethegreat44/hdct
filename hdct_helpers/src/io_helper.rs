@@ -12,9 +12,9 @@ pub fn reader_from_file_or_stdin(filename: Option<String>) -> Box<dyn BufRead> {
     reader
 }
 
-pub fn writer_to_file_or_stdout(filename: Option<String>) -> Box<dyn Write> {
+pub fn writer_to_file_or_stdout(filename: Option<String>) -> Result<Box<dyn Write>, io::Error> {
     match filename {
-        None => Box::new(io::stdout()),
-        Some(filename) => Box::new(File::create(filename).unwrap()),
+        Some(name) => Ok(Box::new(File::create(name)?)),
+        None => Ok(Box::new(io::stdout()))
     }
 }

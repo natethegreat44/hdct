@@ -4,17 +4,18 @@ use crate::row_writer::RowWriter;
 
 pub struct DelimitedOutput<'a> {
     delimiter: String,
-    specs: &'a Vec<ColumnSpec>
+    specs: &'a Vec<ColumnSpec>,
+    writer: Box<dyn Write>
 }
 
 impl<'a> DelimitedOutput<'a> {
-    pub fn new(delimiter: String, specs: &'a Vec<ColumnSpec>) -> Self {
-        Self { delimiter, specs }
+    pub fn new(delimiter: String, specs: &'a Vec<ColumnSpec>, writer: Box<dyn Write>) -> Self {
+        Self { delimiter, specs, writer }
     }
 }
 
 impl RowWriter for DelimitedOutput<'_> {
-    fn begin(&self) {
+    fn begin(&mut self) {
         let header_line = self
             .specs
             .iter()
@@ -22,15 +23,17 @@ impl RowWriter for DelimitedOutput<'_> {
             .collect::<Vec<String>>()
             .join(&self.delimiter);
 
-        println!("{}", header_line);
+        let line = format!("{header_line}\n");
+        let _ = self.writer.write_all(line.as_bytes());
     }
 
-    fn write_row(&self, items: Vec<String>) {
+    fn write_row(&mut self, items: Vec<String>) {
         let joined = items.join(&self.delimiter);
-        println!("{}", joined);
+        let line = format!("{joined}\n");
+        let _ = self.writer.write_all(line.as_bytes());
     }
 
-    fn end(&self) {
-        // self.writer.flush().unwrap();
+    fn end(&mut self) {
+        let _ = self.writer.flush().unwrap();
     }
 }

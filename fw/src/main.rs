@@ -10,7 +10,7 @@ mod parquet_output;
 
 use column_spec::ColumnSpec;
 use delimited_output::DelimitedOutput;
-use parquet_output::ParquetOutput;
+// use parquet_output::ParquetOutput;
 use row_writer::RowWriter;
 
 #[derive(Parser, Debug)]
@@ -46,10 +46,11 @@ fn main() {
 
     let spec = ColumnSpec::parse(args.spec.as_str());
     let reader = reader_from_file_or_stdin(args.input_file_name);
-    let writer = writer_to_file_or_stdout(args.output_file_name);
+    let writer = writer_to_file_or_stdout(args.output_file_name).unwrap();
+
     let mut output: Box<dyn RowWriter> = match args.output_file_format.as_str() {
-        "delimited" => Box::new(DelimitedOutput::new(args.delimiter.to_string(), &spec)),
-        "parquet" => Box::new(ParquetOutput::new(&spec)),
+        "delimited" => Box::new(DelimitedOutput::new(args.delimiter.to_string(), &spec, writer)),
+        // "parquet" => Box::new(ParquetOutput::new(&spec)),
         _ => unimplemented!(),
     };
 
