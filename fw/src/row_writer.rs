@@ -1,4 +1,5 @@
 pub trait RowWriter {
-    fn write_header(&self);
+    fn begin(&self);
     fn write_row(&self, row: Vec<String>);
+    fn end(&self);
 }

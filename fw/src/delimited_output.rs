@@ -1,9 +1,10 @@
+use std::io::Write;
 use crate::column_spec::ColumnSpec;
 use crate::row_writer::RowWriter;
 
 pub struct DelimitedOutput<'a> {
     delimiter: String,
-    specs: &'a Vec<ColumnSpec>,
+    specs: &'a Vec<ColumnSpec>
 }
 
 impl<'a> DelimitedOutput<'a> {
@@ -13,7 +14,7 @@ impl<'a> DelimitedOutput<'a> {
 }
 
 impl RowWriter for DelimitedOutput<'_> {
-    fn write_header(&self) {
+    fn begin(&self) {
         let header_line = self
             .specs
             .iter()
@@ -27,5 +28,9 @@ impl RowWriter for DelimitedOutput<'_> {
     fn write_row(&self, items: Vec<String>) {
         let joined = items.join(&self.delimiter);
         println!("{}", joined);
+    }
+
+    fn end(&self) {
+        // self.writer.flush().unwrap();
     }
 }
