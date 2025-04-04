@@ -5,7 +5,7 @@ pub struct ColumnSpec {
 }
 
 impl ColumnSpec {
-    fn parse_individual(spec: &str) -> ColumnSpec {
+    fn from_spec(spec: &str) -> ColumnSpec {
         let mut parts = spec.split(":");
 
         ColumnSpec {
@@ -15,15 +15,15 @@ impl ColumnSpec {
         }
     }
 
-    pub fn parse(spec: &str) -> Vec<ColumnSpec> {
+    pub fn from_specs(spec: &str) -> Vec<ColumnSpec> {
         spec.split(",")
-            .map(|x| ColumnSpec::parse_individual(x))
+            .map(|x| ColumnSpec::from_spec(x))
             .collect()
     }
 
-    pub fn format(&self, input: &str) -> String {
+    pub fn parse(&self, input: &str) -> String {
         match self.data_type.as_str() {
-            "s" => format!("\"{}\"", input.to_string()),
+            "str" => format!("\"{}\"", input.to_string()),
             _ => input.to_string(),
         }
     }

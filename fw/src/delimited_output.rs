@@ -23,12 +23,20 @@ impl RowWriter for DelimitedOutput<'_> {
             .collect::<Vec<String>>()
             .join(&self.delimiter);
 
+        // There's probably a better way to do this
         let line = format!("{header_line}\n");
         let _ = self.writer.write_all(line.as_bytes());
     }
 
     fn write_row(&mut self, items: Vec<String>) {
-        let joined = items.join(&self.delimiter);
+        // I thought about trimming upstream but giving the output handlers flexibility is good. Make it configurable.
+        let joined = items
+            .iter()
+            .map(|col| col.as_str().trim())
+            .collect::<Vec<&str>>()
+            .join(&self.delimiter);
+
+        // There's probably a better way to do this, preferably with a Line-capable writer
         let line = format!("{joined}\n");
         let _ = self.writer.write_all(line.as_bytes());
     }

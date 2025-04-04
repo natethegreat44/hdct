@@ -44,12 +44,12 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let spec = ColumnSpec::parse(args.spec.as_str());
+    let specs = ColumnSpec::from_specs(args.spec.as_str());
     let reader = reader_from_file_or_stdin(args.input_file_name);
     let writer = writer_to_file_or_stdout(args.output_file_name).unwrap();
 
     let mut output: Box<dyn RowWriter> = match args.output_file_format.as_str() {
-        "delimited" => Box::new(DelimitedOutput::new(args.delimiter.to_string(), &spec, writer)),
+        "delimited" => Box::new(DelimitedOutput::new(args.delimiter.to_string(), &specs, writer)),
         // "parquet" => Box::new(ParquetOutput::new(&spec)),
         _ => unimplemented!(),
     };
@@ -60,27 +60,26 @@ fn main() {
 
     for line in iterator {
         let line = line.unwrap();
-        let parsed = parse_line(&line, &spec);
+        let parsed = split_line_into_columns(&line, &specs);
         output.write_row(parsed);
     }
 
     output.end();
 }
 
-fn parse_line(line: &String, spec: &Vec<ColumnSpec>) -> Vec<String> {
+fn split_line_into_columns(line: &String, spec: &Vec<ColumnSpec>) -> Vec<String> {
     let mut result = Vec::<String>::new();
     let line_length = line.chars().count();
 
     let mut pos: usize = 0;
     for column in spec {
-        // TODO: If we've reached the end of the line, may be able to push empty strings for performance
         let end = min(line_length, pos + column.width);
 
         let substring = &line[pos..end];
-        let formatted_string = column.format(substring);
-        pos = min(line_length, column.width);
+        let parsed = column.parse(substring);
+        pos = min(line_length, pos + column.width);
 
-        result.push(formatted_string.trim().to_string());
+        result.push(parsed.to_string());
     }
 
     result
