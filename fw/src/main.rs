@@ -1,6 +1,7 @@
 use clap::Parser;
-use hdct_helpers::io_helper::{reader_from_file_or_stdin, writer_to_file_or_stdout};
+use hdct_helpers::io_helper::{reader_from_file_or_stdin};
 use std::cmp::min;
+use std::fs::File;
 use std::io::BufRead;
 
 mod column_spec;
@@ -10,7 +11,7 @@ mod parquet_output;
 
 use column_spec::ColumnSpec;
 use delimited_output::DelimitedOutput;
-// use parquet_output::ParquetOutput;
+use parquet_output::ParquetOutput;
 use row_writer::RowWriter;
 
 #[derive(Parser, Debug)]
@@ -28,9 +29,9 @@ struct Args {
     #[clap(short='i', long="input-file")]
     pub input_file_name: Option<String>,
 
-    /// File to read. If not specified, will expect stdin.
+    /// File to write.
     #[clap(short='o', long="output-file")]
-    pub output_file_name: Option<String>,
+    pub output_file_name: String,
 
     #[clap(default_value="delimited", short='f', long="output-format")]
     pub output_file_format: String,
@@ -46,11 +47,11 @@ fn main() {
 
     let specs = ColumnSpec::from_specs(args.spec.as_str());
     let reader = reader_from_file_or_stdin(args.input_file_name);
-    let writer = writer_to_file_or_stdout(args.output_file_name).unwrap();
+    let output_file = File::create(args.output_file_name).unwrap();
 
     let mut output: Box<dyn RowWriter> = match args.output_file_format.as_str() {
-        "delimited" => Box::new(DelimitedOutput::new(args.delimiter.to_string(), &specs, writer)),
-        // "parquet" => Box::new(ParquetOutput::new(&spec)),
+        "delimited" => Box::new(DelimitedOutput::new(args.delimiter.to_string(), &specs, output_file)),
+        "parquet" =>  Box::new(ParquetOutput::new(&specs, output_file)),
         _ => unimplemented!(),
     };
 

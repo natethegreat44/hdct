@@ -1,3 +1,4 @@
+use std::fs::File;
 use std::io::Write;
 use crate::column_spec::ColumnSpec;
 use crate::row_writer::RowWriter;
@@ -5,11 +6,11 @@ use crate::row_writer::RowWriter;
 pub struct DelimitedOutput<'a> {
     delimiter: String,
     specs: &'a Vec<ColumnSpec>,
-    writer: Box<dyn Write>
+    writer: File
 }
 
 impl<'a> DelimitedOutput<'a> {
-    pub fn new(delimiter: String, specs: &'a Vec<ColumnSpec>, writer: Box<dyn Write>) -> Self {
+    pub fn new(delimiter: String, specs: &'a Vec<ColumnSpec>, writer: File) -> Self {
         Self { delimiter, specs, writer }
     }
 }
@@ -23,9 +24,7 @@ impl RowWriter for DelimitedOutput<'_> {
             .collect::<Vec<String>>()
             .join(&self.delimiter);
 
-        // There's probably a better way to do this
-        let line = format!("{header_line}\n");
-        let _ = self.writer.write_all(line.as_bytes());
+        writeln!(self.writer, "{}", header_line).unwrap();
     }
 
     fn write_row(&mut self, items: Vec<String>) {
@@ -36,9 +35,7 @@ impl RowWriter for DelimitedOutput<'_> {
             .collect::<Vec<&str>>()
             .join(&self.delimiter);
 
-        // There's probably a better way to do this, preferably with a Line-capable writer
-        let line = format!("{joined}\n");
-        let _ = self.writer.write_all(line.as_bytes());
+        writeln!(self.writer, "{}", joined).unwrap();
     }
 
     fn end(&mut self) {
