@@ -1,7 +1,7 @@
 use std::fs::File;
-use arrow::datatypes::{DataType, Field, Schema};
+use arrow::datatypes::{DataType, Field, FieldRef, Schema};
 use std::sync::Arc;
-
+use arrow::array::StructArray;
 use crate::RowWriter;
 use crate::column_spec::ColumnSpec;
 
@@ -12,6 +12,8 @@ use parquet::file::properties::{BloomFilterPosition, WriterProperties};
 pub struct ParquetOutput<'a> {
     specs: &'a Vec<ColumnSpec>,
     writer: ParquetWriter<File>,
+    schema: Arc<Schema>,
+    buffer: Vec<>
 }
 
 fn create_schema(specs: &Vec<ColumnSpec>) -> Arc<Schema> {
@@ -31,6 +33,7 @@ fn create_schema(specs: &Vec<ColumnSpec>) -> Arc<Schema> {
                     "uint32" => DataType::UInt32,
                     "uint16" => DataType::UInt16,
                     "uint8" => DataType::UInt8,
+                    // "int32[]" => DataType::List(FieldRef::)
                     _ => DataType::Utf8,
                 },
                 false,
@@ -57,12 +60,13 @@ impl<'a> ParquetOutput<'a> {
 
         let parquet_writer = ParquetWriter::try_new(
             output_file,
-            schema,
+            schema.clone(),
             Some(properties)).unwrap();
 
         Self {
             specs,
             writer: parquet_writer,
+            schema,
         }
     }
 }
@@ -75,6 +79,15 @@ impl RowWriter for ParquetOutput<'_> {
 
     fn write_row(&mut self, row: Vec<String>) {
         print!(".");
+
+        // the writer expects batches, so this method should batch the records up
+        // and then write when the size gets too big
+
+        self.writer.write(&StructArray::new(
+            self.schema.fields.clone(), // this seems super expensive
+            row,
+            None,
+        ));
     }
 
     fn end(&mut self) {
