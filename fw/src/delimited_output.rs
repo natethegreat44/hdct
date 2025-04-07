@@ -6,12 +6,12 @@ use crate::row_writer::RowWriter;
 pub struct DelimitedOutput<'a> {
     delimiter: String,
     specs: &'a Vec<ColumnSpec>,
-    writer: File
+    output_file: File
 }
 
 impl<'a> DelimitedOutput<'a> {
-    pub fn new(delimiter: String, specs: &'a Vec<ColumnSpec>, writer: File) -> Self {
-        Self { delimiter, specs, writer }
+    pub fn new(delimiter: String, specs: &'a Vec<ColumnSpec>, output_file: File) -> Self {
+        Self { delimiter, specs, output_file }
     }
 }
 
@@ -24,7 +24,7 @@ impl RowWriter for DelimitedOutput<'_> {
             .collect::<Vec<String>>()
             .join(&self.delimiter);
 
-        writeln!(self.writer, "{}", header_line).unwrap();
+        writeln!(self.output_file, "{}", header_line).unwrap();
     }
 
     fn write_row(&mut self, items: Vec<String>) {
@@ -35,10 +35,10 @@ impl RowWriter for DelimitedOutput<'_> {
             .collect::<Vec<&str>>()
             .join(&self.delimiter);
 
-        writeln!(self.writer, "{}", joined).unwrap();
+        writeln!(self.output_file, "{}", joined).unwrap();
     }
 
     fn end(&mut self) {
-        let _ = self.writer.flush().unwrap();
+        let _ = self.output_file.flush().unwrap();
     }
 }

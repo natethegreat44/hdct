@@ -1,19 +1,18 @@
 use std::fs::File;
-use arrow::datatypes::{DataType, Field, FieldRef, Schema};
+use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use std::sync::Arc;
-use arrow::array::StructArray;
+use arrow::array::StringBuilder;
 use crate::RowWriter;
 use crate::column_spec::ColumnSpec;
 
-use parquet::arrow::ArrowWriter as ParquetWriter;
+use parquet::arrow::ArrowWriter;
 use parquet::basic::Encoding;
 use parquet::file::properties::{BloomFilterPosition, WriterProperties};
 
 pub struct ParquetOutput<'a> {
     specs: &'a Vec<ColumnSpec>,
-    writer: ParquetWriter<File>,
-    schema: Arc<Schema>,
-    buffer: Vec<>
+    writer: ArrowWriter<File>,
+    schema: SchemaRef
 }
 
 fn create_schema(specs: &Vec<ColumnSpec>) -> Arc<Schema> {
@@ -58,7 +57,11 @@ impl<'a> ParquetOutput<'a> {
             .set_bloom_filter_position(bloom_filter_position)
             .build();
 
-        let parquet_writer = ParquetWriter::try_new(
+        let value_builder = StringBuilder::new(); // Builder for the string values inside the list
+        let
+
+
+        let parquet_writer = ArrowWriter::try_new(
             output_file,
             schema.clone(),
             Some(properties)).unwrap();
@@ -83,11 +86,11 @@ impl RowWriter for ParquetOutput<'_> {
         // the writer expects batches, so this method should batch the records up
         // and then write when the size gets too big
 
-        self.writer.write(&StructArray::new(
-            self.schema.fields.clone(), // this seems super expensive
-            row,
-            None,
-        ));
+        // self.writer.write(&StructArray::new(
+        //     self.schema.fields.clone(), // this seems super expensive
+        //     row,
+        //     None,
+        // ));
     }
 
     fn end(&mut self) {
