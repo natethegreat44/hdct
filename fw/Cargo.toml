@@ -8,3 +8,4 @@ arrow = "54.3.1"
 clap = { version = "4.5.34", features = ["derive"] }
 hdct_helpers = { path = "../hdct_helpers" }
 parquet = "54.3.0"
+anyhow = "1.0.98"

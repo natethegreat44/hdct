@@ -5,7 +5,7 @@ pub struct ColumnSpec {
 }
 
 impl ColumnSpec {
-    fn from_spec(spec: &str) -> ColumnSpec {
+    fn from_spec_str(spec: &str) -> ColumnSpec {
         let mut parts = spec.split(":");
 
         ColumnSpec {
@@ -15,9 +15,9 @@ impl ColumnSpec {
         }
     }
 
-    pub fn from_specs(spec: &str) -> Vec<ColumnSpec> {
+    pub fn from_specs_str(spec: &str) -> Vec<ColumnSpec> {
         spec.split(",")
-            .map(|x| ColumnSpec::from_spec(x))
+            .map(|x| ColumnSpec::from_spec_str(x))
             .collect()
     }
 

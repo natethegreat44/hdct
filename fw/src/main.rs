@@ -46,14 +46,14 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let specs = ColumnSpec::from_specs(args.spec.as_str());
+    let specs = ColumnSpec::from_specs_str(args.spec.as_str());
     let reader = reader_from_file_or_stdin(args.input_file_name);
     let output_file = File::create(args.output_file_name).unwrap(); //writer_to_file_or_stdout(args.output_file_name);
 
     let mut output: Box<dyn RowWriter> = match args.output_file_format.as_str() {
         "delimited" => Box::new(DelimitedOutput::new(args.delimiter.to_string(), &specs, output_file)),
         "parquet" =>  Box::new(ParquetOutput::new(&specs, output_file)),
-        _ => unimplemented!(),
+        _ => unimplemented!("Don't know how to handle that file format."),
     };
 
     let iterator = reader.lines();
