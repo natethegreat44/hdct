@@ -163,31 +163,35 @@ fn write_batch(
 }
 
 /// Macro to handle downcasting, empty check, parsing, and appending for numeric types.
-macro_rules! handle_numeric_append {
+macro_rules! builder {
+    // Use a block to scope the downcast result and return a Result
+    ($builder:expr, $builder_type:ty, $type_name:expr) => {{
+        $builder
+            .as_any_mut()
+            .downcast_mut::<$builder_type>()
+            .ok_or_else(|| anyhow!("Builder type mismatch for {}", $type_name))?
+    }};
+}
+
+macro_rules! numeric_append {
     // $builder: The mutable Box<dyn ArrayBuilder> expression
     // $value_str: The input string slice expression
     // $builder_type: The concrete builder type (e.g., Int32Builder)
     // $parse_type: The Rust type to parse into (e.g., i32)
     // $type_name: A string literal representing the type name for error messages (e.g., "Int32")
-    ($builder:expr, $value_str:expr, $builder_type:ty, $parse_type:ty, $type_name:expr) => {
-        {
-            // Use a block to scope the downcast result and return a Result
-            let concrete_builder = $builder
-                .as_any_mut()
-                .downcast_mut::<$builder_type>()
-                .ok_or_else(|| anyhow!("Builder type mismatch for {}", $type_name))?;
-            if $value_str.is_empty() {
-                concrete_builder.append_null();
-            } else {
-                match $value_str.parse::<$parse_type>() {
-                    Ok(val) => concrete_builder.append_value(val),
-                    Err(e) => {
-                        bail!("Unable to parse '{}' as {}: {}", $value_str, $type_name, e);
-                    }
+    ($builder:expr, $value_str:expr, $builder_type:ty, $parse_type:ty, $type_name:expr) => {{
+        let concrete_builder = builder!($builder, $builder_type, $type_name);
+        if $value_str.is_empty() {
+            concrete_builder.append_null();
+        } else {
+            match $value_str.parse::<$parse_type>() {
+                Ok(val) => concrete_builder.append_value(val),
+                Err(e) => {
+                    bail!("Unable to parse '{}' as {}: {}", $value_str, $type_name, e);
                 }
             }
-        } // The block evaluates to Result<(), anyhow::Error>};
-    };
+        }
+    }}; // The block evaluates to Result<(), anyhow::Error>};};
 }
 
 fn append_value(
@@ -196,46 +200,30 @@ fn append_value(
     value_str: &str,
 ) -> Result<()> {
     match data_type {
-        DataType::Int8 => handle_numeric_append!(builder, value_str, Int8Builder, i8, "Int8"),
-        DataType::Int16 => handle_numeric_append!(builder, value_str, Int16Builder, i16, "Int16"),
-        DataType::Int32 => handle_numeric_append!(builder, value_str, Int32Builder, i32, "Int32"),
-        DataType::Int64 => handle_numeric_append!(builder, value_str, Int64Builder, i64, "Int64"),
-        DataType::UInt8 => handle_numeric_append!(builder, value_str, UInt8Builder, u8, "UInt8"),
-        DataType::UInt16 => handle_numeric_append!(builder, value_str, UInt16Builder, u16, "UInt16"),
-        DataType::UInt32 => handle_numeric_append!(builder, value_str, UInt32Builder, u32, "UInt32"),
-        DataType::UInt64 => handle_numeric_append!(builder, value_str, UInt64Builder, u64, "UInt64"),
-        DataType::Float32 => handle_numeric_append!(builder, value_str, Float32Builder, f32, "Float32"),
-        DataType::Float64 => handle_numeric_append!(builder, value_str, Float64Builder, f64, "Float64"),
+        DataType::Int8 => numeric_append!(builder, value_str, Int8Builder, i8, "Int8"),
+        DataType::Int16 => numeric_append!(builder, value_str, Int16Builder, i16, "Int16"),
+        DataType::Int32 => numeric_append!(builder, value_str, Int32Builder, i32, "Int32"),
+        DataType::Int64 => numeric_append!(builder, value_str, Int64Builder, i64, "Int64"),
+        DataType::UInt8 => numeric_append!(builder, value_str, UInt8Builder, u8, "UInt8"),
+        DataType::UInt16 => numeric_append!(builder, value_str, UInt16Builder, u16, "UInt16"),
+        DataType::UInt32 => numeric_append!(builder, value_str, UInt32Builder, u32, "UInt32"),
+        DataType::UInt64 => numeric_append!(builder, value_str, UInt64Builder, u64, "UInt64"),
+        DataType::Float32 => numeric_append!(builder, value_str, Float32Builder, f32, "Float32"),
+        DataType::Float64 => numeric_append!(builder, value_str, Float64Builder, f64, "Float64"),
         DataType::Boolean => {
-            let concrete_builder = builder
-                .as_any_mut()
-                .downcast_mut::<BooleanBuilder>()
-                .ok_or_else(|| anyhow!("Builder type mismatch for Boolean"))?;
+            let concrete_builder = builder!(builder, BooleanBuilder, "Boolean");
             match value_str.to_lowercase().as_str() {
                 "true" | "t" | "1" | "yes" | "y" => concrete_builder.append_value(true),
                 "false" | "f" | "0" | "no" | "n" => concrete_builder.append_value(false),
                 "" => concrete_builder.append_null(), // Empty string as null boolean explicitly
-                _ => bail!(format!(
+                _ => bail!(
                     "Cannot parse '{}' as Boolean. Use true/false/1/0 etc.",
                     value_str
-                )),
+                ),
             }
         }
-        // String treats empty strings as "", not NULL by default with append_value.
-        // To make empty strings NULL, change append_value("") to append_null().
         DataType::Utf8 => {
-            let concrete_builder = builder
-                .as_any_mut()
-                .downcast_mut::<StringBuilder>()
-                .ok_or_else(|| anyhow!("Builder type mismatch for String"))?;
-            // Decide how to handle empty strings for Utf8:
-            // Option 1: Treat empty string as NULL
-            // if value_str.is_empty() {
-            //     concrete_builder.append_null();
-            // } else {
-            //     concrete_builder.append_value(value_str);
-            // }
-            // Option 2: Treat empty string as "" (current behavior)
+            let concrete_builder = builder!(builder, StringBuilder, "String");
             concrete_builder.append_value(value_str);
         }
         // Add parsing logic for other supported types here
