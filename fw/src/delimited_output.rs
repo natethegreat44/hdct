@@ -1,17 +1,21 @@
-use std::fs::File;
-use std::io::Write;
 use crate::column_spec::ColumnSpec;
 use crate::row_writer::RowWriter;
+use std::fs::File;
+use std::io::Write;
 
 pub struct DelimitedOutput<'a> {
     delimiter: String,
     specs: &'a Vec<ColumnSpec>,
-    output_file: File
+    output_file: File,
 }
 
 impl<'a> DelimitedOutput<'a> {
     pub fn new(delimiter: String, specs: &'a Vec<ColumnSpec>, output_file: File) -> Self {
-        Self { delimiter, specs, output_file }
+        Self {
+            delimiter,
+            specs,
+            output_file,
+        }
     }
 }
 

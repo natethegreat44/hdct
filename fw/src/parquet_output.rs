@@ -1,7 +1,11 @@
 use crate::RowWriter;
 use crate::column_spec::ColumnSpec;
 use anyhow::{Context, Result, anyhow, bail};
-use arrow::array::{ArrayBuilder, BooleanBuilder, Float32Builder, Float64Builder, Int16Builder, Int32Builder, Int64Builder, Int8Builder, RecordBatch, StringBuilder, UInt16Builder, UInt32Builder, UInt64Builder, UInt8Builder};
+use arrow::array::{
+    ArrayBuilder, BooleanBuilder, Float32Builder, Float64Builder, Int8Builder, Int16Builder,
+    Int32Builder, Int64Builder, RecordBatch, StringBuilder, UInt8Builder, UInt16Builder,
+    UInt32Builder, UInt64Builder,
+};
 use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use std::fs::File;
 use std::sync::Arc;
@@ -29,7 +33,7 @@ impl ParquetOutput {
             .set_bloom_filter_position(bloom_filter_position)
             .build();
 
-        let builders = Self::create_builders(&schema, 1000);
+        let builders = Self::create_builders(&schema);
 
         let parquet_writer =
             ArrowWriter::try_new(output_file, schema.clone(), Some(properties)).unwrap();
@@ -74,46 +78,23 @@ impl ParquetOutput {
     }
 
     /// Creates Arrow ArrayBuilders based on the schema.
-    fn create_builders(schema: &SchemaRef, capacity: usize) -> Vec<Box<dyn ArrayBuilder>> {
+    fn create_builders(schema: &SchemaRef) -> Vec<Box<dyn ArrayBuilder>> {
         schema
             .fields()
             .iter()
             .map(|field| match field.data_type() {
-                DataType::Int8 => {
-                    Box::new(Int8Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
-                }
-                DataType::Int16 => {
-                    Box::new(Int16Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
-                }
-                DataType::Int32 => {
-                    Box::new(Int32Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
-                }
-                DataType::Int64 => {
-                    Box::new(Int64Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
-                }
-                DataType::UInt8 => {
-                    Box::new(UInt8Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
-                }
-                DataType::UInt16 => {
-                    Box::new(UInt16Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
-                }
-                DataType::UInt32 => {
-                    Box::new(UInt32Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
-                }
-                DataType::UInt64 => {
-                    Box::new(UInt64Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
-                }
-                DataType::Float32 => {
-                    Box::new(Float32Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
-                }
-                DataType::Float64 => {
-                    Box::new(Float64Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
-                }
-                DataType::Boolean => {
-                    Box::new(BooleanBuilder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
-                }
-                DataType::Utf8 => Box::new(StringBuilder::with_capacity(capacity, capacity * 10))
-                    as Box<dyn ArrayBuilder>, // Estimate string data size
+                DataType::Int8 => Box::new(Int8Builder::new()) as Box<dyn ArrayBuilder>,
+                DataType::Int16 => Box::new(Int16Builder::new()) as Box<dyn ArrayBuilder>,
+                DataType::Int32 => Box::new(Int32Builder::new()) as Box<dyn ArrayBuilder>,
+                DataType::Int64 => Box::new(Int64Builder::new()) as Box<dyn ArrayBuilder>,
+                DataType::UInt8 => Box::new(UInt8Builder::new()) as Box<dyn ArrayBuilder>,
+                DataType::UInt16 => Box::new(UInt16Builder::new()) as Box<dyn ArrayBuilder>,
+                DataType::UInt32 => Box::new(UInt32Builder::new()) as Box<dyn ArrayBuilder>,
+                DataType::UInt64 => Box::new(UInt64Builder::new()) as Box<dyn ArrayBuilder>,
+                DataType::Float32 => Box::new(Float32Builder::new()) as Box<dyn ArrayBuilder>,
+                DataType::Float64 => Box::new(Float64Builder::new()) as Box<dyn ArrayBuilder>,
+                DataType::Boolean => Box::new(BooleanBuilder::new()) as Box<dyn ArrayBuilder>,
+                DataType::Utf8 => Box::new(StringBuilder::new()) as Box<dyn ArrayBuilder>,
                 // Add builders for other supported types here
                 dt => panic!("Unsupported data type for builder creation: {:?}", dt), // Should not happen if schema parsing is correct
             })
@@ -189,7 +170,8 @@ macro_rules! handle_numeric_append {
     // $parse_type: The Rust type to parse into (e.g., i32)
     // $type_name: A string literal representing the type name for error messages (e.g., "Int32")
     ($builder:expr, $value_str:expr, $builder_type:ty, $parse_type:ty, $type_name:expr) => {
-        { // Use a block to scope the downcast result and return a Result
+        {
+            // Use a block to scope the downcast result and return a Result
             let concrete_builder = $builder
                 .as_any_mut()
                 .downcast_mut::<$builder_type>()
@@ -204,7 +186,7 @@ macro_rules! handle_numeric_append {
                     }
                 }
             }
-        } // The block evaluates to Result<(), anyhow::Error>
+        } // The block evaluates to Result<(), anyhow::Error>};
     };
 }
 

@@ -1,13 +1,13 @@
-use clap::{Parser};
-use hdct_helpers::io_helper::{reader_from_file_or_stdin};
+use clap::Parser;
+use hdct_helpers::io_helper::reader_from_file_or_stdin;
 use std::cmp::min;
 use std::fs::File;
 use std::io::BufRead;
 
 mod column_spec;
 mod delimited_output;
-mod row_writer;
 mod parquet_output;
+mod row_writer;
 
 use column_spec::ColumnSpec;
 use delimited_output::DelimitedOutput;
@@ -18,7 +18,7 @@ use row_writer::RowWriter;
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Fixed-width file spec
-    #[clap(short='s', long="spec")]
+    #[clap(short = 's', long = "spec")]
     pub spec: String,
 
     /// Delimiter to use on the output data
@@ -26,15 +26,15 @@ struct Args {
     pub delimiter: String,
 
     /// File to read. If not specified, will use stdin.
-    #[clap(short='i', long="input-file")]
+    #[clap(short = 'i', long = "input-file")]
     pub input_file_name: Option<String>,
 
     /// File to write.
-    #[clap(short='o', long="output-file")]
+    #[clap(short = 'o', long = "output-file")]
     pub output_file_name: String,
 
     /// Output format to write.
-    #[clap(default_value="delimited", short='f', long="output-format")]
+    #[clap(default_value = "delimited", short = 'f', long = "output-format")]
     pub output_file_format: String,
 
     /// Print headers
@@ -51,8 +51,12 @@ fn main() {
     let output_file = File::create(args.output_file_name).unwrap(); //writer_to_file_or_stdout(args.output_file_name);
 
     let mut output: Box<dyn RowWriter> = match args.output_file_format.as_str() {
-        "delimited" => Box::new(DelimitedOutput::new(args.delimiter.to_string(), &specs, output_file)),
-        "parquet" =>  Box::new(ParquetOutput::new(&specs, output_file)),
+        "delimited" => Box::new(DelimitedOutput::new(
+            args.delimiter.to_string(),
+            &specs,
+            output_file,
+        )),
+        "parquet" => Box::new(ParquetOutput::new(&specs, output_file)),
         _ => unimplemented!("Don't know how to handle that file format."),
     };
 
