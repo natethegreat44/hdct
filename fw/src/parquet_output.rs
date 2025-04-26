@@ -1,10 +1,7 @@
 use crate::RowWriter;
 use crate::column_spec::ColumnSpec;
 use anyhow::{Context, Result, anyhow, bail};
-use arrow::array::{
-    ArrayBuilder, BooleanBuilder, Float32Builder, Float64Builder, Int32Builder, Int64Builder,
-    RecordBatch, StringBuilder,
-};
+use arrow::array::{ArrayBuilder, BooleanBuilder, Float32Builder, Float64Builder, Int16Builder, Int32Builder, Int64Builder, Int8Builder, RecordBatch, StringBuilder, UInt16Builder, UInt32Builder, UInt64Builder, UInt8Builder};
 use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use std::error::Error;
 use std::fs::File;
@@ -54,16 +51,18 @@ impl ParquetOutput {
                     col.name.to_string(),
                     match col.data_type.as_str() {
                         "str" => DataType::Utf8,
-                        "int64" => DataType::Int64,
-                        "int32" => DataType::Int32,
-                        "int16" => DataType::Int16,
                         "int8" => DataType::Int8,
-                        "uint64" => DataType::UInt64,
-                        "uint32" => DataType::UInt32,
-                        "uint16" => DataType::UInt16,
+                        "int16" => DataType::Int16,
+                        "int32" => DataType::Int32,
+                        "int64" => DataType::Int64,
                         "uint8" => DataType::UInt8,
+                        "uint16" => DataType::UInt16,
+                        "uint32" => DataType::UInt32,
+                        "uint64" => DataType::UInt64,
+                        "f32" => DataType::Float32,
+                        "f64" => DataType::Float64,
                         // "int32[]" => DataType::List(FieldRef::)
-                        _ => DataType::Utf8,
+                        _ => DataType::Utf8, //Probably should bail here
                     },
                     true,
                 )
@@ -81,11 +80,29 @@ impl ParquetOutput {
             .fields()
             .iter()
             .map(|field| match field.data_type() {
+                DataType::Int8 => {
+                    Box::new(Int8Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
+                }
+                DataType::Int16 => {
+                    Box::new(Int16Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
+                }
                 DataType::Int32 => {
                     Box::new(Int32Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
                 }
                 DataType::Int64 => {
                     Box::new(Int64Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
+                }
+                DataType::UInt8 => {
+                    Box::new(UInt8Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
+                }
+                DataType::UInt16 => {
+                    Box::new(UInt16Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
+                }
+                DataType::UInt32 => {
+                    Box::new(UInt32Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
+                }
+                DataType::UInt64 => {
+                    Box::new(UInt64Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
                 }
                 DataType::Float32 => {
                     Box::new(Float32Builder::with_capacity(capacity)) as Box<dyn ArrayBuilder>
@@ -108,17 +125,15 @@ impl ParquetOutput {
 // //
 impl RowWriter for ParquetOutput {
     fn begin(&mut self) {
-        println!("begin");
+        // Nothing to do here
     }
 
     fn write_row(&mut self, row: Vec<String>) {
-        print!(".");
-
         for (pos, col) in row.iter().enumerate() {
             let val = col.trim();
             let builder = &mut self.builders[pos];
             let data_type = self.schema.fields[pos].data_type();
-            _ = append_value(builder, data_type, val)
+            append_value(builder, data_type, val).unwrap();
         }
 
         self.record_count += 1;
@@ -178,6 +193,46 @@ fn append_value(
     };
 
     match data_type {
+        DataType::Int8 => {
+            let concrete_builder = builder
+                .as_any_mut()
+                .downcast_mut::<Int8Builder>()
+                .ok_or_else(|| anyhow!("Builder type mismatch for Int32"))?;
+            if value_str.is_empty() {
+                concrete_builder.append_null();
+            } else {
+                match value_str.parse::<i8>() {
+                    Ok(val) => concrete_builder.append_value(val),
+                    Err(e) => {
+                        return Err(create_parse_error(
+                            value_str.to_string(),
+                            "Int32",
+                            Box::new(e),
+                        ));
+                    }
+                }
+            }
+        }
+        DataType::Int16 => {
+            let concrete_builder = builder
+                .as_any_mut()
+                .downcast_mut::<Int16Builder>()
+                .ok_or_else(|| anyhow!("Builder type mismatch for Int32"))?;
+            if value_str.is_empty() {
+                concrete_builder.append_null();
+            } else {
+                match value_str.parse::<i16>() {
+                    Ok(val) => concrete_builder.append_value(val),
+                    Err(e) => {
+                        return Err(create_parse_error(
+                            value_str.to_string(),
+                            "Int32",
+                            Box::new(e),
+                        ));
+                    }
+                }
+            }
+        }
         DataType::Int32 => {
             let concrete_builder = builder
                 .as_any_mut()
@@ -207,6 +262,86 @@ fn append_value(
                 concrete_builder.append_null();
             } else {
                 match value_str.parse::<i64>() {
+                    Ok(val) => concrete_builder.append_value(val),
+                    Err(e) => {
+                        return Err(create_parse_error(
+                            value_str.to_string(),
+                            "Int64",
+                            Box::new(e),
+                        ));
+                    }
+                }
+            }
+        }
+        DataType::UInt8 => {
+            let concrete_builder = builder
+                .as_any_mut()
+                .downcast_mut::<UInt8Builder>()
+                .ok_or_else(|| anyhow!("Builder type mismatch for UInt8"))?;
+            if value_str.is_empty() {
+                concrete_builder.append_null();
+            } else {
+                match value_str.parse::<u8>() {
+                    Ok(val) => concrete_builder.append_value(val),
+                    Err(e) => {
+                        return Err(create_parse_error(
+                            value_str.to_string(),
+                            "Int32",
+                            Box::new(e),
+                        ));
+                    }
+                }
+            }
+        }
+        DataType::UInt16 => {
+            let concrete_builder = builder
+                .as_any_mut()
+                .downcast_mut::<UInt16Builder>()
+                .ok_or_else(|| anyhow!("Builder type mismatch for UInt16"))?;
+            if value_str.is_empty() {
+                concrete_builder.append_null();
+            } else {
+                match value_str.parse::<u16>() {
+                    Ok(val) => concrete_builder.append_value(val),
+                    Err(e) => {
+                        return Err(create_parse_error(
+                            value_str.to_string(),
+                            "Int32",
+                            Box::new(e),
+                        ));
+                    }
+                }
+            }
+        }
+        DataType::UInt32 => {
+            let concrete_builder = builder
+                .as_any_mut()
+                .downcast_mut::<UInt32Builder>()
+                .ok_or_else(|| anyhow!("Builder type mismatch for UInt32"))?;
+            if value_str.is_empty() {
+                concrete_builder.append_null();
+            } else {
+                match value_str.parse::<u32>() {
+                    Ok(val) => concrete_builder.append_value(val),
+                    Err(e) => {
+                        return Err(create_parse_error(
+                            value_str.to_string(),
+                            "Int32",
+                            Box::new(e),
+                        ));
+                    }
+                }
+            }
+        }
+        DataType::UInt64 => {
+            let concrete_builder = builder
+                .as_any_mut()
+                .downcast_mut::<UInt64Builder>()
+                .ok_or_else(|| anyhow!("Builder type mismatch for UInt64"))?;
+            if value_str.is_empty() {
+                concrete_builder.append_null();
+            } else {
+                match value_str.parse::<u64>() {
                     Ok(val) => concrete_builder.append_value(val),
                     Err(e) => {
                         return Err(create_parse_error(
