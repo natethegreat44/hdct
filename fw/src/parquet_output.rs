@@ -3,16 +3,15 @@ use crate::column_spec::ColumnSpec;
 use anyhow::{Context, Result, anyhow, bail};
 use arrow::array::{
     ArrayBuilder, BooleanBuilder, Float32Builder, Float64Builder, Int8Builder, Int16Builder,
-    Int32Builder, Int64Builder, RecordBatch, StringBuilder, UInt8Builder, UInt16Builder,
-    UInt32Builder, UInt64Builder,
+    Int32Builder, Int64Builder, ListBuilder, RecordBatch, StringBuilder, UInt8Builder,
+    UInt16Builder, UInt32Builder, UInt64Builder,
 };
 use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
-use std::fs::File;
-use std::sync::Arc;
-
 use parquet::arrow::ArrowWriter;
 use parquet::basic::Encoding;
 use parquet::file::properties::{BloomFilterPosition, WriterProperties};
+use std::fs::File;
+use std::sync::Arc;
 
 pub struct ParquetOutput {
     writer: ArrowWriter<File>,
@@ -64,7 +63,10 @@ impl ParquetOutput {
                         "uint64" => DataType::UInt64,
                         "f32" => DataType::Float32,
                         "f64" => DataType::Float64,
-                        // "int32[]" => DataType::List(FieldRef::)
+                        "int32[]" => {
+                            DataType::List(Arc::new(Field::new("item", DataType::UInt32, true)))
+                        }
+                        // "int32[]" => DataType::List(FieldRef::new(Field::new(col.name.to_string(), DataType::Int32, true))),
                         _ => DataType::Utf8, //Probably should bail here
                     },
                     true,
@@ -91,10 +93,14 @@ impl ParquetOutput {
                 DataType::UInt16 => Box::new(UInt16Builder::new()) as Box<dyn ArrayBuilder>,
                 DataType::UInt32 => Box::new(UInt32Builder::new()) as Box<dyn ArrayBuilder>,
                 DataType::UInt64 => Box::new(UInt64Builder::new()) as Box<dyn ArrayBuilder>,
+                DataType::List(field_ref) if *field_ref.data_type() == DataType::UInt32 => {
+                    Box::new(ListBuilder::new(UInt32Builder::new())) as Box<dyn ArrayBuilder>
+                }
                 DataType::Float32 => Box::new(Float32Builder::new()) as Box<dyn ArrayBuilder>,
                 DataType::Float64 => Box::new(Float64Builder::new()) as Box<dyn ArrayBuilder>,
                 DataType::Boolean => Box::new(BooleanBuilder::new()) as Box<dyn ArrayBuilder>,
                 DataType::Utf8 => Box::new(StringBuilder::new()) as Box<dyn ArrayBuilder>,
+                // DataType::List
                 // Add builders for other supported types here
                 dt => panic!("Unsupported data type for builder creation: {:?}", dt), // Should not happen if schema parsing is correct
             })
@@ -194,6 +200,40 @@ macro_rules! numeric_append {
     }}; // The block evaluates to Result<(), anyhow::Error>};};
 }
 
+macro_rules! numeric_list_append {
+    // $builder: The mutable Box<dyn ArrayBuilder> expression
+    // $value_str: The input string slice expression
+    // $builder_type: The concrete builder type (e.g., Int32Builder)
+    // $parse_type: The Rust type to parse into (e.g., i32)
+    // $type_name: A string literal representing the type name for error messages (e.g., "Int32")
+    ($builder:expr, $value_str:expr, $builder_type:ty, $parse_type:ty, $type_name:expr) => {{
+        let concrete_builder = builder!($builder, $builder_type, $type_name);
+
+        if $value_str.is_empty() {
+            concrete_builder.append_null();
+        } else {
+            let values_builder = concrete_builder.values();
+            for (i, c) in $value_str.trim().chars().enumerate() {
+                // Try parsing the element as i32
+                match c.to_digit(10) {
+                    Some(val) => values_builder.append_value(val),
+                    None => {
+                        bail!(
+                            "Unable to parse element '{}' at position {} as {}",
+                            $value_str,
+                            i,
+                            $type_name
+                        );
+                    }
+                }
+            }
+
+            // Crucial: Mark the end of the current list; signifies it's a valid (non-null) list
+            concrete_builder.append(true);
+        }
+    }}; // The block evaluates to Result<(), anyhow::Error>};};
+}
+
 fn append_value(
     builder: &mut Box<dyn ArrayBuilder>,
     data_type: &DataType,
@@ -208,6 +248,15 @@ fn append_value(
         DataType::UInt16 => numeric_append!(builder, value_str, UInt16Builder, u16, "UInt16"),
         DataType::UInt32 => numeric_append!(builder, value_str, UInt32Builder, u32, "UInt32"),
         DataType::UInt64 => numeric_append!(builder, value_str, UInt64Builder, u64, "UInt64"),
+        DataType::List(field_ref) if *field_ref.data_type() == DataType::UInt32 => {
+            numeric_list_append!(
+                builder,
+                value_str,
+                ListBuilder<UInt32Builder>,
+                u32,
+                "List<UInt32>"
+            )
+        }
         DataType::Float32 => numeric_append!(builder, value_str, Float32Builder, f32, "Float32"),
         DataType::Float64 => numeric_append!(builder, value_str, Float64Builder, f64, "Float64"),
         DataType::Boolean => {
