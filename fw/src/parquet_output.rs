@@ -100,7 +100,6 @@ impl ParquetOutput {
                 DataType::Float64 => Box::new(Float64Builder::new()) as Box<dyn ArrayBuilder>,
                 DataType::Boolean => Box::new(BooleanBuilder::new()) as Box<dyn ArrayBuilder>,
                 DataType::Utf8 => Box::new(StringBuilder::new()) as Box<dyn ArrayBuilder>,
-                // DataType::List
                 // Add builders for other supported types here
                 dt => panic!("Unsupported data type for builder creation: {:?}", dt), // Should not happen if schema parsing is correct
             })
@@ -125,13 +124,16 @@ impl RowWriter for ParquetOutput {
         self.record_count += 1;
 
         if self.record_count % 1000 == 0 {
-            _ = write_batch(&mut self.writer, self.schema.clone(), &mut self.builders);
+            //TODO: Could change the trait to return a Result<()> 
+            write_batch(&mut self.writer, self.schema.clone(), &mut self.builders)
+                .expect("failed to write row");
         }
     }
 
     fn end(&mut self) {
         if self.record_count % 1000 != 0 {
-            _ = write_batch(&mut self.writer, self.schema.clone(), &mut self.builders);
+            write_batch(&mut self.writer, self.schema.clone(), &mut self.builders)
+                .expect("Unable to write last batch of records");
         }
 
         self.writer.finish().unwrap();
@@ -214,7 +216,7 @@ macro_rules! numeric_list_append {
         } else {
             let values_builder = concrete_builder.values();
             for (i, c) in $value_str.trim().chars().enumerate() {
-                // Try parsing the element as i32
+                 // Try parsing the element as i32
                 match c.to_digit(10) {
                     Some(val) => values_builder.append_value(val),
                     None => {
@@ -248,15 +250,8 @@ fn append_value(
         DataType::UInt16 => numeric_append!(builder, value_str, UInt16Builder, u16, "UInt16"),
         DataType::UInt32 => numeric_append!(builder, value_str, UInt32Builder, u32, "UInt32"),
         DataType::UInt64 => numeric_append!(builder, value_str, UInt64Builder, u64, "UInt64"),
-        DataType::List(field_ref) if *field_ref.data_type() == DataType::UInt32 => {
-            numeric_list_append!(
-                builder,
-                value_str,
-                ListBuilder<UInt32Builder>,
-                u32,
-                "List<UInt32>"
-            )
-        }
+        DataType::List(field_ref) if *field_ref.data_type() == DataType::UInt32 =>
+            numeric_list_append!(builder, value_str, ListBuilder<UInt32Builder>, u32, "List<UInt32>"),
         DataType::Float32 => numeric_append!(builder, value_str, Float32Builder, f32, "Float32"),
         DataType::Float64 => numeric_append!(builder, value_str, Float64Builder, f64, "Float64"),
         DataType::Boolean => {
