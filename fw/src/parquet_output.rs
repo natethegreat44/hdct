@@ -35,8 +35,8 @@ impl ParquetOutput {
 
         let builders = Self::create_builders(&schema);
 
-        let parquet_writer =
-            ArrowWriter::try_new(output_file, schema.clone(), Some(properties)).unwrap();
+        let parquet_writer = ArrowWriter::try_new(output_file, schema.clone(), Some(properties))
+            .expect("Error creating parquet writer");
 
         Self {
             writer: parquet_writer,
@@ -67,8 +67,7 @@ impl ParquetOutput {
                         "int32[]" => {
                             DataType::List(Arc::new(Field::new("item", DataType::UInt32, true)))
                         }
-                        // "int32[]" => DataType::List(FieldRef::new(Field::new(col.name.to_string(), DataType::Int32, true))),
-                        _ => DataType::Utf8, //Probably should bail here
+                        _ => panic!("Don't know how to handle data type {}", col.data_type), //DataType::Utf8, //Probably should bail here
                     },
                     true,
                 )
@@ -119,25 +118,27 @@ impl RowWriter for ParquetOutput {
             let val = col.trim();
             let builder = &mut self.builders[pos];
             let data_type = self.schema.fields[pos].data_type();
-            append_value(builder, data_type, val).unwrap();
+            append_value(builder, data_type, val)
+                .expect(format!("Unable to append value {}", val).as_str());
         }
 
         self.record_count += 1;
 
         if self.record_count % 1000 == 0 {
-            //TODO: Could change the trait to return a Result<()> 
+            //TODO: Could change the trait to return a Result<()>
             write_batch(&mut self.writer, self.schema.clone(), &mut self.builders)
                 .expect("failed to write row");
         }
     }
 
     fn end(&mut self) {
-        // if self.record_count % 1000 != 0 {
-            write_batch(&mut self.writer, self.schema.clone(), &mut self.builders)
-                .expect("Unable to write last batch of records");
-        // }
+        write_batch(&mut self.writer, self.schema.clone(), &mut self.builders)
+            .expect("Unable to write last batch of records");
 
-        self.writer.finish().unwrap();
+        self.writer.flush().expect("Error flushing writer");
+        self.writer
+            .finish()
+            .expect("Unable to finish parquet writer");
     }
 }
 
@@ -146,26 +147,23 @@ fn write_batch(
     schema: SchemaRef,
     builders: &mut [Box<dyn ArrayBuilder>],
 ) -> Result<()> {
-    // Finish builders and create arrays
     let columns = builders
         .iter_mut()
         .map(|builder| builder.finish()) // This consumes the builder's data
         .collect::<Vec<_>>();
 
-    // Create RecordBatch
-    let batch = RecordBatch::try_new(schema.clone(), columns);
-
-    match batch {
+    match RecordBatch::try_new(schema.clone(), columns) {
         Ok(batch) => {
-            // Write batch to Parquet
             if batch.num_rows() > 0 {
                 // Only write if there's data
                 writer
                     .write(&batch)
                     .context("Failed to write RecordBatch to Parquet writer")?;
+            } else {
+                eprintln!("No rows to write!");
             }
         }
-        Err(e) => return Err(anyhow!("Error creating RecordBatch writer: {}", e)),
+        Err(e) => bail!("Error creating RecordBatch writer: {}", e),
     }
 
     Ok(())
@@ -217,7 +215,7 @@ macro_rules! numeric_list_append {
         } else {
             let values_builder = concrete_builder.values();
             for (i, c) in $value_str.trim().chars().enumerate() {
-                 // Try parsing the element as i32
+                // Try parsing the element as i32
                 match c.to_digit(10) {
                     Some(val) => values_builder.append_value(val),
                     None => {
@@ -251,8 +249,15 @@ fn append_value(
         DataType::UInt16 => numeric_append!(builder, value_str, UInt16Builder, u16, "UInt16"),
         DataType::UInt32 => numeric_append!(builder, value_str, UInt32Builder, u32, "UInt32"),
         DataType::UInt64 => numeric_append!(builder, value_str, UInt64Builder, u64, "UInt64"),
-        DataType::List(field_ref) if *field_ref.data_type() == DataType::UInt32 =>
-            numeric_list_append!(builder, value_str, ListBuilder<UInt32Builder>, u32, "List<UInt32>"),
+        DataType::List(field_ref) if *field_ref.data_type() == DataType::UInt32 => {
+            numeric_list_append!(
+                builder,
+                value_str,
+                ListBuilder<UInt32Builder>,
+                u32,
+                "List<UInt32>"
+            )
+        }
         DataType::Float32 => numeric_append!(builder, value_str, Float32Builder, f32, "Float32"),
         DataType::Float64 => numeric_append!(builder, value_str, Float64Builder, f64, "Float64"),
         DataType::Boolean => {

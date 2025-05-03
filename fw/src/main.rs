@@ -1,9 +1,9 @@
 use clap::Parser;
 use hdct_helpers::io_helper::reader_from_file_or_stdin;
+use indicatif::ProgressBar;
 use std::cmp::min;
 use std::fs::File;
 use std::io::BufRead;
-use indicatif::ProgressBar;
 
 mod column_spec;
 mod delimited_output;
@@ -53,7 +53,7 @@ fn main() {
 
     let specs = ColumnSpec::from_specs_str(args.spec.as_str());
     let (file_len, reader) = reader_from_file_or_stdin(args.input_file_name);
-    let output_file = File::create(&args.output_file_name).unwrap(); //writer_to_file_or_stdout(args.output_file_name);
+    let output_file = File::create(&args.output_file_name).expect("Unable to create output file"); //writer_to_file_or_stdout(args.output_file_name);
 
     let mut output: Box<dyn RowWriter> = match args.output_file_format.as_str() {
         "delimited" => Box::new(DelimitedOutput::new(
@@ -71,7 +71,10 @@ fn main() {
 
     let mut approx_line_count = 0u64;
     if args.progress {
-        let first_line = iterator.next().unwrap().unwrap();
+        let first_line = iterator
+            .next()
+            .expect("Unable to iterate")
+            .expect("Unable to read first line");
         let first_line_width = first_line.len();
         approx_line_count = file_len / first_line_width as u64;
         eprintln!("Approximate line count is {}", approx_line_count);
@@ -81,14 +84,14 @@ fn main() {
 
     let bar = ProgressBar::new(approx_line_count);
     for line in iterator {
-        let line = line.unwrap();
+        let line = line.expect("Unable to read line");
         let parsed = split_line_into_columns(&line, &specs);
         output.write_row(parsed);
         bar.inc(1);
     }
+    bar.finish();
 
     output.end();
-    bar.finish();
 }
 
 fn split_line_into_columns(line: &String, spec: &Vec<ColumnSpec>) -> Vec<String> {
