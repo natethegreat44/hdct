@@ -3,10 +3,13 @@ use std::io;
 use std::io::{BufRead, BufReader, Write};
 
 /// Handy function to get input from a file if one was supplied, otherwise get input from stdin.
-pub fn reader_from_file_or_stdin(filename: Option<String>) -> Box<dyn BufRead> {
+pub fn reader_from_file_or_stdin(filename: Option<String>) -> (u64, Box<dyn BufRead>) {
     match filename {
-        None => Box::new(BufReader::new(io::stdin().lock())),
-        Some(filename) => Box::new(BufReader::new(File::open(filename).unwrap())),
+        None => (0, Box::new(BufReader::new(io::stdin().lock()))),
+        Some(filename) => {
+            (std::fs::metadata(&filename).expect("Failed to read metadata").len(),
+            Box::new(BufReader::new(File::open(filename).unwrap())))
+        },
     }
 }
 

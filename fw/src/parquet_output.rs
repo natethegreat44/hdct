@@ -8,7 +8,7 @@ use arrow::array::{
 };
 use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use parquet::arrow::ArrowWriter;
-use parquet::basic::Encoding;
+use parquet::basic::{Compression, Encoding};
 use parquet::file::properties::{BloomFilterPosition, WriterProperties};
 use std::fs::File;
 use std::sync::Arc;
@@ -30,6 +30,7 @@ impl ParquetOutput {
             .set_column_bloom_filter_enabled("id".into(), true)
             .set_column_encoding("id".into(), Encoding::DELTA_BINARY_PACKED)
             .set_bloom_filter_position(bloom_filter_position)
+            .set_compression(Compression::SNAPPY)
             .build();
 
         let builders = Self::create_builders(&schema);
@@ -131,10 +132,10 @@ impl RowWriter for ParquetOutput {
     }
 
     fn end(&mut self) {
-        if self.record_count % 1000 != 0 {
+        // if self.record_count % 1000 != 0 {
             write_batch(&mut self.writer, self.schema.clone(), &mut self.builders)
                 .expect("Unable to write last batch of records");
-        }
+        // }
 
         self.writer.finish().unwrap();
     }

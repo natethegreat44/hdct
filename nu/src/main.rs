@@ -61,7 +61,7 @@ fn buffer_lines(count: usize, iterator: &mut Lines<Box<dyn BufRead>>) -> Vec<Str
 fn main() {
     let args = Args::parse();
 
-    let reader = reader_from_file_or_stdin(args.file_name);
+    let (_file_size, reader) = reader_from_file_or_stdin(args.file_name);
 
     let mut iterator = reader.lines();
 
