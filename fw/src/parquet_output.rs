@@ -248,13 +248,14 @@ impl ParquetOutput {
     }
 }
 
-//
 impl RowWriter for ParquetOutput {
-    fn begin(&mut self) {
+    fn begin(&mut self) -> Result<(), std::io::Error> {
         // Nothing to do here
+        
+        Ok(())
     }
 
-    fn write_row(&mut self, row: Vec<String>) {
+    fn write_row(&mut self, row: Vec<String>) -> Result<(), std::io::Error> {
         for (pos, col) in row.iter().enumerate() {
             let val = col.trim();
             self.append_value(pos, val)
@@ -266,15 +267,19 @@ impl RowWriter for ParquetOutput {
         if self.record_count % 1000 == 0 {
             self.write_batch().expect("failed to write row");
         }
+        
+        Ok(())
     }
 
-    fn end(&mut self) {
+    fn end(&mut self) -> Result<(), std::io::Error> {
         self.write_batch()
             .expect("Unable to write last batch of records");
         self.writer.flush().expect("Error flushing writer");
         self.writer
             .finish()
             .expect("Unable to finish parquet writer");
+        
+        Ok(())
     }
 }
 

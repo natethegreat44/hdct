@@ -43,8 +43,8 @@ struct Args {
     pub with_headers: bool,
 
     /// Show progress
-    #[clap(default_value_t = true, short, long)]
-    pub progress: bool,
+    #[clap(default_value_t = false, short, long)]
+    pub no_progress: bool,
 }
 
 // COLUMN1_NAME:str:10,COLUMN2_NAME:d:8,COLUMN3_NAME:f:12
@@ -67,10 +67,10 @@ fn main() {
 
     let mut iterator = reader.lines();
 
-    output.begin();
+    output.begin().expect("Unable to start output");
 
     let mut approx_line_count = 0u64;
-    if args.progress {
+    if !args.no_progress {
         let first_line = iterator
             .next()
             .expect("Unable to iterate")
@@ -79,35 +79,35 @@ fn main() {
         approx_line_count = file_len / first_line_width as u64;
         eprintln!("Approximate line count is {}", approx_line_count);
         let parsed = split_line_into_columns(&first_line, &specs);
-        output.write_row(parsed);
+        output.write_row(parsed).expect("Unable to write row");
     }
 
-    let bar = ProgressBar::new(approx_line_count);
-    for line in iterator {
-        let line = line.expect("Unable to read line");
-        let parsed = split_line_into_columns(&line, &specs);
-        output.write_row(parsed);
+    let bar = if args.no_progress {
+        ProgressBar::hidden()
+    } else {
+        ProgressBar::new(approx_line_count)
+    };
+    
+    iterator.for_each(|line| {
+        output.write_row(split_line_into_columns(&line.unwrap(), &specs)).expect("Unable to write row");
         bar.inc(1);
-    }
+    });
     bar.finish();
 
-    output.end();
+    output.end().expect("Unable to end output");
 }
 
 fn split_line_into_columns(line: &String, spec: &Vec<ColumnSpec>) -> Vec<String> {
-    let mut result = Vec::<String>::new();
     let line_length = line.chars().count();
-
     let mut pos: usize = 0;
-    for column in spec {
+    
+    spec.iter().map(|column| {
         let end = min(line_length, pos + column.width);
 
         let substring = &line[pos..end];
         let parsed = column.parse(substring);
         pos = min(line_length, pos + column.width);
 
-        result.push(parsed.to_string());
-    }
-
-    result
+        parsed.to_string()
+    }).collect()
 }
