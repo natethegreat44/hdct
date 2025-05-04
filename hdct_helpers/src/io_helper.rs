@@ -6,10 +6,14 @@ use std::io::{BufRead, BufReader, Write};
 pub fn reader_from_file_or_stdin(filename: Option<String>) -> (u64, Box<dyn BufRead>) {
     match filename {
         None => (0, Box::new(BufReader::new(io::stdin().lock()))),
-        Some(filename) => {
-            (std::fs::metadata(&filename).expect("Failed to read metadata").len(),
-            Box::new(BufReader::new(File::open(filename).expect("Failed to open input file"))))
-        },
+        Some(filename) => (
+            std::fs::metadata(&filename)
+                .expect("Failed to read metadata")
+                .len(),
+            Box::new(BufReader::new(
+                File::open(filename).expect("Failed to open input file"),
+            )),
+        ),
     }
 }
 
